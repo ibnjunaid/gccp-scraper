@@ -11,10 +11,20 @@ const ow = openwhisk();
   * @param {string} params.sheetId  sheetId for specific sheetId
   * @param {string} params.instituteId  Institute Id for the institution
   * @param {string} params.instituteName Name of the institute
+  * @param {string} params.token Name of the institute
   * @return The output of this action, which must be a JSON object.
   *
 */
 async function main(params) {
+    if(params.token !== 'random-string'){
+        return {
+            statusCode: 401,
+            headers: { 'Content-Type': 'application/json' },
+            body: {
+                message: 'Datasync trigger created',
+            }
+        }
+    }
     try {
         if(!params.instituteId || !params.sheetId ) {
             throw new Error("Invalid parameters")
