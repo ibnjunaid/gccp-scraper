@@ -1,12 +1,6 @@
 import rp from 'request-promise';
 import * as cheerio from 'cheerio';
 import { courses, quests } from './syllabus'
-import { URLs } from './urls';
-
-function sleep(time: number) {
-    console.log('sleeping for', time)
-    return new Promise((resolve) => setTimeout(resolve, time));
-}
 
 function extractBadgeDetails(BadgeHTMLElem: cheerio.Element) {
     const BadgeDetail: any = {};
@@ -43,5 +37,17 @@ export async function getBadgesFromURL(qwiklabURL: string) {
             courses_completed += 1;
         }
     })
-    return { courses_completed, quests_completed };
+    let status = 'No';
+    courses_completed = courses_completed >= 4 ? 4 : courses_completed;
+    quests_completed = quests_completed >= 3 ? 3 : quests_completed;
+
+    if (courses_completed === 4 && quests_completed === 3) {
+        status = 'Yes'
+    }
+
+    return {
+        '# of Courses Completed': courses_completed,
+        '# of Skill Badges Completed': quests_completed,
+        'Pathway Completion Status': status
+    };
 }

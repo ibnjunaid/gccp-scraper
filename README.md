@@ -1,0 +1,1 @@
+Openwhisk actions responsible for data sync and creating schedules when a new institution is onboarded

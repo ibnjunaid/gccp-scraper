@@ -1,22 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { google, sheets_v4 } from 'googleapis';
+import { getGoogleAuthClient } from './auth';
 import logger from './logger';
-import { exit } from 'node:process';
-
-let credentials;
-
-let cred = process.env.CRED
-if (cred === undefined){
-    logger.error("Cannot find credentials in environment")
-    exit(-1)
-}
-credentials = JSON.parse(cred);
-credentials.private_key = credentials.private_key.replace(/\\n/gm, '\n')
-
-const auth = new google.auth.GoogleAuth({
-    scopes: "https://www.googleapis.com/auth/spreadsheets",
-    credentials: credentials
-});
 
 
 /**
@@ -27,6 +12,8 @@ const auth = new google.auth.GoogleAuth({
  */
 export async function getDataFromSheet(spreadsheetId: string, tableTitle: string): Promise<any> {
     try {
+        const auth = getGoogleAuthClient()
+
         //Auth client Object
         const authClientObject = await auth.getClient();
 
@@ -50,6 +37,8 @@ export async function getDataFromSheet(spreadsheetId: string, tableTitle: string
 
 export async function getSheetTitles(spreadsheetId: string) {
     try {
+        const auth = getGoogleAuthClient()
+
         const authClientObject = await auth.getClient();
 
         //Google sheet instance
@@ -108,6 +97,8 @@ function sheetValueToObject(sheetValue: sheets_v4.Schema$ValueRange) {
 
 export async function addDataTosheet(spreadsheetId: string, sheetTitle: string, data: any) {
     try {
+        const auth = getGoogleAuthClient()
+
         //Auth client Object
         const authClientObject = await auth.getClient();
 
@@ -127,7 +118,36 @@ export async function addDataTosheet(spreadsheetId: string, sheetTitle: string, 
             includeValuesInResponse: true
         });
         return sheetAppendInfo;
-    } catch(error){
+    } catch (error) {
+        logger.error(error);
+        throw error;
+    }
+}
+
+export async function updateDataTosheet(spreadsheetId: string, sheetTitle: string, data: any) {
+    try {
+        const auth = getGoogleAuthClient()
+
+        //Auth client Object
+        const authClientObject = await auth.getClient();
+
+        //Google sheet instance
+        const googleSheetInstance = google.sheets({ version: "v4", auth: authClientObject });
+
+        //Get metadata about sheet
+        const sheetAppendInfo = await googleSheetInstance.spreadsheets.values.update({
+            spreadsheetId: spreadsheetId,
+            range: sheetTitle,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                range: sheetTitle,
+                majorDimension: 'ROWS',
+                values: data
+            },
+            includeValuesInResponse: true
+        });
+        return sheetAppendInfo;
+    } catch (error) {
         logger.error(error);
         throw error;
     }
