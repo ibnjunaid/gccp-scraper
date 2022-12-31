@@ -2,6 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 import { google, sheets_v4 } from 'googleapis';
 import { getGoogleAuthClient } from './auth';
 import logger from './logger';
+import { generateSheetTitle } from './utils';
 
 
 /**
@@ -151,4 +152,28 @@ export async function updateDataTosheet(spreadsheetId: string, sheetTitle: strin
         logger.error(error);
         throw error;
     }
+}
+
+export async function createNewSheet(spreadsheetId: string){
+    const auth = getGoogleAuthClient()
+
+    const authClientObject = await auth.getClient();
+
+    //Google sheet instance
+    const googleSheetInstance = google.sheets({ version: "v4", auth: authClientObject });
+
+    await googleSheetInstance.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+            requests: [
+                {
+                    addSheet: {
+                        properties: {
+                            title: generateSheetTitle()
+                        }
+                    }
+                }
+            ]
+        }
+    })
 }

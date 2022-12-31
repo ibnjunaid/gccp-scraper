@@ -2,7 +2,6 @@ const openwhisk = require('openwhisk');
 
 const ow = openwhisk();
 
-
 /**
   *
   * main() will be run when you invoke this action
@@ -16,7 +15,7 @@ const ow = openwhisk();
   *
 */
 async function main(params) {
-    if(params.token !== 'random-string'){
+    if (params.token !== 'random-string') {
         return {
             statusCode: 401,
             headers: { 'Content-Type': 'application/json' },
@@ -26,7 +25,7 @@ async function main(params) {
         }
     }
     try {
-        if(!params.instituteId || !params.sheetId ) {
+        if (!params.instituteId || !params.sheetId) {
             throw new Error("Invalid parameters")
         }
 
@@ -37,12 +36,15 @@ async function main(params) {
             name: trigger_name,
         });
 
+        const minute = getRandom(0,30);
+        const cron_pattern = `${minute} */2 * * *`;
+
         // 2. create a feed that will generate messages every minute
         const feed = await ow.feeds.create({
             name: '/whisk.system/alarms/alarm',
             trigger: trigger_name,
             params: {
-                cron : '0 */6 * * *',
+                cron: cron_pattern,    // Emit event on feed an `minute` minute every 2 hour
                 trigger_payload: params
             }
         });
@@ -50,14 +52,14 @@ async function main(params) {
         // 3. create a rule that will in invoke the action
         const rule = await ow.rules.create({
             name: `rule-${params.instituteId}`,
-            action: 'fetcher',
+            action: 'gccp-sync',
             trigger: trigger_name,
         })
         return {
             statusCode: 200,
             headers: { 'Content-Type': 'application/json' },
             body: {
-                message: 'Datasync trigger created',
+                message: `Datasync trigger created for ${params.instituteId} at pattern: ${cron_pattern}`,
             }
         }
     } catch (error) {
@@ -70,4 +72,12 @@ async function main(params) {
             }
         }
     }
+}
+
+function getRandom(min, max) {
+    const floatRandom = Math.random()
+    const difference = max - min
+    const random = Math.round(difference * floatRandom)
+    const randomWithinRange = random + min
+    return randomWithinRange
 }
